@@ -1,11 +1,11 @@
-package Encryption;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.*;
+import java.text.*;
 import java.math.*;
+import java.util.regex.*;
 
 public class Solution {
-    
+
     public Solution(){
         
     }
@@ -49,5 +49,4 @@ public class Solution {
     public static void main(String[] args){
         new Solution().resolver();
     }
-    
 }
