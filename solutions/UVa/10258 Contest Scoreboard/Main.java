@@ -42,16 +42,12 @@ class Main {
 		}
 		
 		public int compareTo(Contestant c2){
-			if(problemsSolved > c2.problemsSolved)		return -1;
-			else if(problemsSolved < c2.problemsSolved) return 1;
-			else {
-				if(timePenalty < c2.timePenalty) 		return -1;
-				else if(timePenalty > c2.timePenalty) 	return 1;
-				else{
-					if(teamNumber < c2.teamNumber)		return -1;
-					else								return 1;
-				}
-			}
+			if(problemsSolved > c2.problemsSolved) return -1;
+			if(problemsSolved < c2.problemsSolved) return 1;
+			if(timePenalty < c2.timePenalty) return -1;
+			if(timePenalty > c2.timePenalty) return 1;
+			if(teamNumber < c2.teamNumber) return -1;
+			else return 1;
 		}
 		
 	}
