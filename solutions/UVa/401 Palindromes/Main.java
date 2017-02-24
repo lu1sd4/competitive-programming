@@ -1,69 +1,104 @@
 import java.io.*;
 import java.util.*;
 
-//UVa 401 - Palindromes
-class Main {
+//UVA 401 - Palindromes
+public class Main {
 
 	static BufferedReader br;
-	static StringTokenizer st = new StringTokenizer("");
+    static StringTokenizer st;
+    static PrintWriter pw;
 	
-	public static void main(String[] args) throws IOException{
+	public static void main(String args[]) throws Exception{
+		new Main().solve();
+	}
+	 
+	void solve() throws Exception{
 		
 		br = new BufferedReader(new InputStreamReader(System.in));
-		//br = new BufferedReader(new FileReader("src/input.txt"));
+        //br = new BufferedReader(new FileReader("src/input"));
+		pw = new PrintWriter(System.out);
+		
+		int[] reverses = new int[400];
+		reverses['A'] = 'A';
+		reverses['E'] = '3';
+		reverses['H'] = 'H';
+		reverses['I'] = 'I';
+		reverses['J'] = 'L';
+		reverses['L'] = 'J';
+		reverses['M'] = 'M';
+		reverses['O'] = 'O';
+		reverses['S'] = '2';
+		reverses['T'] = 'T';
+		reverses['U'] = 'U';
+		reverses['V'] = 'V';
+		reverses['W'] = 'W';
+		reverses['X'] = 'X';
+		reverses['Y'] = 'Y';
+		reverses['Z'] = '5';
+		reverses['1'] = '1';
+		reverses['2'] = 'S';
+		reverses['3'] = 'E';
+		reverses['5'] = 'Z';
+		reverses['8'] = '8';
 		
 		String line;
-		boolean pal, mir;
-		char[] reversables = {'A', 'E', 'H', 'I', 'J', 'L', 'M', 'O', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '5', '8'};
-		char[] reverses    = {'A', '3', 'H', 'I', 'L', 'J', 'M', 'O', '2', 'T', 'U', 'V', 'W', 'X', 'Y', '5', '1', 'S', 'E', 'Z', '8'};
-		int[] r = new int[1000];
-		for(int i = 0; i < reversables.length; i++)
-			r[(int)reversables[i]] = (int)reverses[i];
-		
-		String[] anss = {" -- is a mirrored palindrome.", " -- is a mirrored string.", " -- is a regular palindrome.", " -- is not a palindrome."};
-		
 		while((line = br.readLine()) != null){
-			char[] chars = line.toCharArray();
-			if(line.length() > 1){
-				pal = true;
-				mir = true;
-				
-				for(int i = 0; i < chars.length/2; i++){
-					if(chars[i] != chars[chars.length-1-i]){
-						pal = false;
-						if(r[(int)chars[i]] != (int)chars[chars.length-i-1])
-							mir = false;
-					}
-					else if(r[(int)chars[i]] == 0 || r[(int)chars[i]] != (int)chars[i])
-						mir = false;
-				}
-				
-				if(chars.length % 2 == 1){
-					if(r[(int)chars[chars.length/2]] != (int)chars[chars.length/2]) 
-						mir = false;
-				}
-				else
-					if(r[(int)chars[chars.length/2]] != (int)chars[chars.length/2 - 1])
-						mir = false;
-				
-				if(mir && pal)
-					line += anss[0];
-				else if(mir)
-					line += anss[1];
-				else if(pal)
-					line += anss[2];
-				else
-					line += anss[3];
-				
-			} else {
-				if(r[(int)chars[0]] != (int)chars[0])
-					line += anss[2];
-				else
-					line += anss[0];
+			
+			boolean pal = true, mir = true;
+			
+			for(int i = 0; i < line.length()/2 + 1; i++){
+				char cur = line.charAt(i);
+				char back = line.charAt(line.length() - i - 1); 
+				if(reverses[cur] != back)
+					mir = false;
+				if(cur != back)
+					pal = false;
 			}
-
-			System.out.println(line+"\n");
+			pw.print(line+" -- ");
+			if(!mir && !pal)
+				pw.println("is not a palindrome.");
+			if(!mir && pal)
+				pw.println("is a regular palindrome.");
+			if(mir && !pal)
+				pw.println("is a mirrored string.");
+			if(mir && pal)
+				pw.println("is a mirrored palindrome.");
+			
+			pw.println();
+			
 		}
+		
+		br.close();
+		pw.close();
+		
 	}
+		
+	char[] lineAsCharArray() throws IOException{
+    	return br.readLine().toCharArray();
+    }
+    
+    String next() throws Exception{
+    	return st.nextToken();
+    }
+    
+    void tokenize(String s) throws Exception{
+        st = new StringTokenizer(s);
+    }
+
+    int lineToInt() throws IOException{
+        return Integer.parseInt(new StringTokenizer(br.readLine()).nextToken());
+    }
+
+    long readLong() throws Exception{
+        return Long.parseLong(st.nextToken());
+    }
+
+    int readInt() throws Exception{
+        return Integer.parseInt(st.nextToken());
+    }
+    
+    void nextLine() throws Exception{
+        st = new StringTokenizer(br.readLine());
+    }
 	
 }
