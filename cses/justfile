@@ -1,0 +1,44 @@
+bin_dir := "src/bin"
+test_dir := "tests"
+template := "template.rs"
+
+new name:
+  cp {{ template }} {{ bin_dir }}/{{ name }}.rs
+  mkdir -p {{ test_dir }}/{{ name }}
+  touch {{ test_dir }}/{{ name }}/1.in {{ test_dir }}/{{ name }}/1.out
+  @echo "Created {{ bin_dir }}/{{ name }}.rs — edit tests/{{ name }}/1.in and 1.out with the sample case"
+
+build name:
+  cargo build --bin {{ name }}
+
+build-release name:
+  cargo build --release --bin {{ name }}
+
+run name:
+  cargo run --quiet --bin {{ name }}
+
+run-file name file:
+  cargo run --quiet --bin {{ name }} -- {{ test_dir }}/{{ name }}/{{ file }}
+
+test name:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  cargo build --quiet --bin {{ name }}
+  pass=0; fail=0
+  for infile in {{ test_dir }}/{{ name }}/*.in; do
+    base=$(basename "$infile" .in)
+    expected="{{ test_dir }}/{{ name }}/${base}.out"
+    actual=$(./target/debug/{{ name }} "$infile")
+    if [ "$actual" == "$(cat "$expected")" ]; then
+      echo "[PASS] $base"; pass=$((pass+1))
+    else
+      echo "[FAIL] $base"
+      echo "  expected: $(cat "$expected")"
+      echo "  actual:   $actual"
+      fail=$((fail+1))
+    fi
+  done
+  echo "$pass passed, $fail failed"
+
+clean:
+  cargo clean
