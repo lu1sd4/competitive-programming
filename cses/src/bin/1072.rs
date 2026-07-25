@@ -18,15 +18,16 @@ type Reader = Box<dyn Read>;
 
 fn solve(io: &mut Io<Reader, Stdout>) {
   let up_to: usize = io.next();
-  let mut t: Vec<usize> = vec![0,6,28,96,252];
+  let mut t: Vec<usize> = vec![0, 6, 28, 96, 252];
   for n in 1..=up_to {
     let i = n - 1;
     if i >= t.len() {
-      let inner = (n-3).pow(2);
-      let outer = (n-1).pow(2) - inner;
-      let new_layer = 2*n - 1;
+      let inner = (n - 3).pow(2);
+      let outer = (n - 1).pow(2) - inner;
+      let new_layer = 2 * n - 1;
       let new_layer_pairs = (new_layer * (new_layer - 1)) / 2 - 2;
-      let res = t[i-1] + inner * new_layer + outer * new_layer - (outer - 6) * 2 - 6 - 4 + new_layer_pairs;
+      let res = t[i - 1] + inner * new_layer + outer * new_layer - (outer - 6) * 2 - 6 - 4
+        + new_layer_pairs;
       t.push(res);
     }
     io.writeln(t[i]);
@@ -90,7 +91,8 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self.input
+    self
+      .input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))
@@ -145,4 +147,3 @@ impl<T: Copy + Default + From<u8> + std::ops::Add<Output = T>> Binomial<T> {
     self.table[n][k]
   }
 }
-

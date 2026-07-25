@@ -3,8 +3,8 @@ use std::cmp::{max, min, Reverse};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Stdout, Write};
-use std::str::FromStr;
 use std::ops::{Index, IndexMut};
+use std::str::FromStr;
 
 fn main() {
   let reader = open_input();
@@ -18,13 +18,13 @@ fn main() {
 type Reader = Box<dyn Read>;
 
 struct UppercaseCharCounter {
-  per_char_count: [u32; 26]
+  per_char_count: [u32; 26],
 }
 
 impl Default for UppercaseCharCounter {
   fn default() -> UppercaseCharCounter {
     UppercaseCharCounter {
-      per_char_count: [0; 26]
+      per_char_count: [0; 26],
     }
   }
 }
@@ -32,7 +32,7 @@ impl Default for UppercaseCharCounter {
 fn index_uppercase_char(c: char) -> usize {
   match c {
     'A'..='Z' => c as usize - 'A' as usize,
-    _ => panic!("trying to count unsuported char {c}")
+    _ => panic!("trying to count unsuported char {c}"),
   }
 }
 
@@ -72,7 +72,7 @@ fn solve(io: &mut Io<Reader, Stdout>) {
     }
   }
   for c in 'A'..='Z' {
-    for count in 0..char_counter[c]/2 {
+    for count in 0..char_counter[c] / 2 {
       io.write(c)
     }
   }
@@ -80,7 +80,7 @@ fn solve(io: &mut Io<Reader, Stdout>) {
     io.write(middle_character)
   }
   for c in ('A'..='Z').rev() {
-    for count in 0..char_counter[c]/2 {
+    for count in 0..char_counter[c] / 2 {
       io.write(c)
     }
   }
@@ -144,7 +144,8 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self.input
+    self
+      .input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))

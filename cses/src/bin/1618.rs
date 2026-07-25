@@ -84,7 +84,8 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self.input
+    self
+      .input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))
