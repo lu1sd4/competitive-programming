@@ -23,22 +23,44 @@ run-file name file:
 test name:
   #!/usr/bin/env bash
   set -euo pipefail
+
   cargo build --quiet --bin {{ name }}
-  pass=0; fail=0
+
+  pass=0
+  fail=0
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' EXIT
+
   for infile in {{ test_dir }}/{{ name }}/*.in; do
     base=$(basename "$infile" .in)
     expected="{{ test_dir }}/{{ name }}/${base}.out"
-    actual=$(./target/debug/{{ name }} "$infile")
-    if [ "$actual" == "$(cat "$expected")" ]; then
-      echo "[PASS] $base"; pass=$((pass+1))
+    actual="$tmpdir/${base}.out"
+
+    if ./target/debug/{{ name }} "$infile" > "$actual"; then
+      if diff -q "$expected" "$actual" >/dev/null; then
+        echo "[PASS] $base"
+        pass=$((pass + 1))
+      else
+        echo "[FAIL] $base"
+        echo
+        delta --paging=never --line-numbers "$expected" "$actual" || true
+        echo
+        fail=$((fail + 1))
+      fi
     else
-      echo "[FAIL] $base"
-      echo "  expected: $(cat "$expected")"
-      echo "  actual:   $actual"
-      fail=$((fail+1))
+      status=$?
+      echo "[FAIL] $base (program exited with status $status)"
+      echo
+      echo "--- output ---"
+      cat "$actual"
+      echo "--------------"
+      echo
+      fail=$((fail + 1))
     fi
   done
+
   echo "$pass passed, $fail failed"
+  [ "$fail" -eq 0 ]
 
 clean:
   cargo clean
