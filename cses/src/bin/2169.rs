@@ -18,7 +18,7 @@ type Reader = Box<dyn Read>;
 
 struct FenwickTree {
   size: usize,
-  tree: Vec<i64>,
+  tree: Vec<u32>,
 }
 
 impl FenwickTree {
@@ -28,97 +28,56 @@ impl FenwickTree {
       tree: vec![0; size + 1],
     }
   }
-  fn update(&mut self, mut index: usize, value: i64) {
+  fn update(&mut self, mut index: usize, value: u32) {
     while index <= self.size {
       self.tree[index] += value;
       index += index & index.wrapping_neg();
     }
   }
-  fn get(&self, index: usize) -> i64 {
+  fn get(&self, mut index: usize) -> u32 {
     let mut sum = 0;
-    let mut i = index as i32;
-    while i > 0 {
-      sum += self.tree[i as usize];
-      i -= i & i.wrapping_neg();
+    while index != 0 {
+      sum += self.tree[index as usize];
+      index -= index & index.wrapping_neg();
     }
     sum
   }
 }
 
-struct FenwickMultiset {
-  ftree: FenwickTree,
-  comp: Vec<i64>,
-  size: i64,
-}
-
-impl FenwickMultiset {
-  fn from(values: &Vec<i64>) -> Self {
-    let mut comp: Vec<i64> = values.clone();
-    comp.sort_unstable();
-    comp.dedup();
-    let mut ftree = FenwickTree::new(comp.len());
-    let mut multiset = FenwickMultiset {
-      ftree,
-      comp,
-      size: values.len() as i64,
-    };
-    for &e in values {
-      multiset.insert(e);
-    }
-    multiset
-  }
-  fn insert(&mut self, value: i64) {
-    let index = self.comp.partition_point(|&x| x < value) + 1;
-    self.ftree.update(index, 1);
-  }
-  fn erase(&mut self, value: i64) {
-    let index = self.comp.partition_point(|&x| x < value) + 1;
-    self.ftree.update(index, -1);
-    self.size -= 1;
-  }
-  fn count_le(&self, value: i64) -> i64 {
-    let index = self.comp.partition_point(|&x| x <= value);
-    self.ftree.get(index)
-  }
-  fn count_ge(&self, value: i64) -> i64 {
-    let index = self.comp.partition_point(|&x| x < value);
-    self.size - self.ftree.get(index)
-  }
-}
-
 fn solve(io: &mut Io<Reader, Stdout>) {
   let n: usize = io.next();
-  let mut ranges: Vec<(i64, i64, usize)> = Vec::new();
-  let mut rights: Vec<i64> = Vec::new();
+  let mut ranges: Vec<(u32, u32, usize)> = Vec::new();
+  let mut rights: Vec<u32> = Vec::with_capacity(n);
   for i in 0..n {
     let l = io.next();
     let r = io.next();
     ranges.push((l, r, i));
-    rights.push(r as i64);
+    rights.push(r);
   }
-  // contains -> a <= c && b >= d
+  rights.sort_unstable();
+  rights.dedup();
+  let mut ranges: Vec<(u32, usize, usize)> = ranges
+    .into_iter()
+    .map(|(l, r, idx)| {
+        let comp_r = rights.partition_point(|&x| x < r) + 1;
+        (l, comp_r, idx)
+    })
+    .collect();
   ranges.sort_by_key(|&(a, b, _)| (a, Reverse(b)));
-  let mut contains = FenwickMultiset::from(&rights);
-  let mut res_contains = vec![0i64; n];
-  // at range (l, r):
-  // - all remaining ranges (a, b) have a >= l
-  // - ranges with b <= r are contained in (l, r)
-  for &(_, r, i) in &ranges {
-    contains.erase(r);
-    res_contains[i] = contains.count_le(r);
+  let mut contains = FenwickTree::new(rights.len());
+  let mut res_contains = vec![0; n];
+  for i in (0..n).rev() {
+    let &(_, comp_r, range_idx) = &ranges[i];
+    res_contains[range_idx] = contains.get(comp_r);
+    contains.update(comp_r, 1);
   }
-  // is_contained -> a >= c && b <= d
-  ranges.sort_by_key(|&(a, b, _)| (Reverse(a), b));
-  let mut is_contained = FenwickMultiset::from(&rights);
-  let mut res_is_contained = vec![0i64; n];
-  // at range (l, r):
-  // - all remaining ranges (a, b) have a <= l
-  // - ranges with b >= r are contained in (l, r)
-  for &(_, r, i) in &ranges {
-    is_contained.erase(r);
-    res_is_contained[i] = is_contained.count_ge(r);
+  let mut is_contained = FenwickTree::new(rights.len());
+  let mut res_is_contained = vec![0; n];
+  for i in 0..n {
+    let &(_, comp_r, range_idx) = &ranges[i];
+    res_is_contained[range_idx] = (i as u32) - is_contained.get(comp_r - 1);
+    is_contained.update(comp_r, 1);
   }
-
   for c in res_contains {
     io.write_sp(c);
   }
