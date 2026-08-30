@@ -1,9 +1,11 @@
 #![allow(unused)]
-use std::cmp::{max, min, Ordering, Reverse};
+use std::cmp::{max, min, Reverse};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Stdout, Write};
+use std::ops::Bound::{Excluded, Unbounded};
 use std::str::FromStr;
+use std::thread::current;
 
 fn main() {
   let reader = open_input();
@@ -16,74 +18,45 @@ fn main() {
 
 type Reader = Box<dyn Read>;
 
-struct FenwickTree {
-  size: usize,
-  tree: Vec<u32>,
-}
-
-impl FenwickTree {
-  fn new(size: usize) -> Self {
-    FenwickTree {
-      size,
-      tree: vec![0; size + 1],
-    }
-  }
-  fn update(&mut self, mut index: usize, value: u32) {
-    while index <= self.size {
-      self.tree[index] += value;
-      index += index & index.wrapping_neg();
-    }
-  }
-  fn get(&self, mut index: usize) -> u32 {
-    let mut sum = 0;
-    while index != 0 {
-      sum += self.tree[index as usize];
-      index -= index & index.wrapping_neg();
-    }
-    sum
-  }
+fn get_left_neighbor(
+  treemap: &mut BTreeMap<usize, BTreeSet<usize>>,
+  n: usize,
+) -> Option<(&usize, &mut BTreeSet<usize>)> {
+  treemap.range_mut((Unbounded, Excluded(n))).next_back()
 }
 
 fn solve(io: &mut Io<Reader, Stdout>) {
   let n: usize = io.next();
-  let mut ranges: Vec<(u32, u32, usize)> = Vec::new();
-  let mut rights: Vec<u32> = Vec::with_capacity(n);
-  for i in 0..n {
-    let l = io.next();
-    let r = io.next();
-    ranges.push((l, r, i));
-    rights.push(r);
+  let mut customers: Vec<(usize, usize, usize)> =
+    (0..n).map(|i| (io.next(), io.next(), i)).collect();
+  customers.sort_unstable();
+  let mut assignment = vec![0; n];
+  let mut rooms: BTreeMap<usize, BTreeSet<usize>> = BTreeMap::new();
+  let mut next_room = 1;
+  for &(customer_start, customer_end, i) in &customers {
+    match get_left_neighbor(&mut rooms, customer_start) {
+      Some((&room_end, room_numbers)) => {
+        let room = room_numbers.pop_first().unwrap();
+        let empty = room_numbers.is_empty();
+
+        assignment[i] = room;
+
+        rooms.entry(customer_end).or_default().insert(room);
+
+        if empty {
+          rooms.remove_entry(&room_end);
+        }
+      }
+      None => {
+        assignment[i] = next_room;
+        rooms.entry(customer_end).or_default().insert(next_room);
+        next_room += 1;
+      }
+    }
   }
-  rights.sort_unstable();
-  rights.dedup();
-  let mut ranges: Vec<(u32, usize, usize)> = ranges
-    .into_iter()
-    .map(|(l, r, idx)| {
-      let comp_r = rights.partition_point(|&x| x < r) + 1;
-      (l, comp_r, idx)
-    })
-    .collect();
-  ranges.sort_by_key(|&(a, b, _)| (a, Reverse(b)));
-  let mut contains = FenwickTree::new(rights.len());
-  let mut res_contains = vec![0; n];
-  for i in (0..n).rev() {
-    let &(_, comp_r, range_idx) = &ranges[i];
-    res_contains[range_idx] = contains.get(comp_r);
-    contains.update(comp_r, 1);
-  }
-  let mut is_contained = FenwickTree::new(rights.len());
-  let mut res_is_contained = vec![0; n];
-  for i in 0..n {
-    let &(_, comp_r, range_idx) = &ranges[i];
-    res_is_contained[range_idx] = (i as u32) - is_contained.get(comp_r - 1);
-    is_contained.update(comp_r, 1);
-  }
-  for c in res_contains {
-    io.write_sp(c);
-  }
-  io.writeln("");
-  for c in res_is_contained {
-    io.write_sp(c);
+  io.writeln(next_room - 1);
+  for a in assignment {
+    io.write_sp(a);
   }
   io.writeln("");
 }

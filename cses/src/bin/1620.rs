@@ -1,5 +1,5 @@
 #![allow(unused)]
-use std::cmp::{max, min, Ordering, Reverse};
+use std::cmp::{max, min, Reverse};
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Stdout, Write};
@@ -16,76 +16,63 @@ fn main() {
 
 type Reader = Box<dyn Read>;
 
-struct FenwickTree {
-  size: usize,
-  tree: Vec<u32>,
-}
-
-impl FenwickTree {
-  fn new(size: usize) -> Self {
-    FenwickTree {
-      size,
-      tree: vec![0; size + 1],
-    }
-  }
-  fn update(&mut self, mut index: usize, value: u32) {
-    while index <= self.size {
-      self.tree[index] += value;
-      index += index & index.wrapping_neg();
-    }
-  }
-  fn get(&self, mut index: usize) -> u32 {
-    let mut sum = 0;
-    while index != 0 {
-      sum += self.tree[index as usize];
-      index -= index & index.wrapping_neg();
-    }
-    sum
-  }
+fn products_at_time(machines: &Vec<u64>, time: u64) -> u64 {
+  let mut products = 0;
+  machines.iter().map(|interval| time / interval).sum()
 }
 
 fn solve(io: &mut Io<Reader, Stdout>) {
-  let n: usize = io.next();
-  let mut ranges: Vec<(u32, u32, usize)> = Vec::new();
-  let mut rights: Vec<u32> = Vec::with_capacity(n);
-  for i in 0..n {
-    let l = io.next();
-    let r = io.next();
-    ranges.push((l, r, i));
-    rights.push(r);
+  let n_machines: usize = io.next();
+  let n_products: u64 = io.next();
+  let mut machines: Vec<u64> = (0..n_machines).map(|_| io.next()).collect();
+  let mut min_time = 0;
+  let mut max_time = machines.iter().max().unwrap() * n_products;
+  while min_time < max_time {
+    let time = min_time + (max_time - min_time) / 2;
+    if products_at_time(&machines, time) >= n_products {
+      max_time = time;
+    } else {
+      min_time = time + 1;
+    }
   }
-  rights.sort_unstable();
-  rights.dedup();
-  let mut ranges: Vec<(u32, usize, usize)> = ranges
-    .into_iter()
-    .map(|(l, r, idx)| {
-      let comp_r = rights.partition_point(|&x| x < r) + 1;
-      (l, comp_r, idx)
-    })
-    .collect();
-  ranges.sort_by_key(|&(a, b, _)| (a, Reverse(b)));
-  let mut contains = FenwickTree::new(rights.len());
-  let mut res_contains = vec![0; n];
-  for i in (0..n).rev() {
-    let &(_, comp_r, range_idx) = &ranges[i];
-    res_contains[range_idx] = contains.get(comp_r);
-    contains.update(comp_r, 1);
+  io.writeln(min_time);
+}
+
+fn solve_simulate(io: &mut Io<Reader, Stdout>) {
+  let n_machines: usize = io.next();
+  let n_products: u64 = io.next();
+  let mut machines: BTreeMap<u64, BTreeMap<u64, u64>> = BTreeMap::new();
+  for _ in 0..n_machines {
+    let machine_time: u64 = io.next();
+    machines
+      .entry(machine_time)
+      .and_modify(|machine_specs| {
+        *machine_specs.entry(machine_time).or_default() += 1;
+      })
+      .or_insert(BTreeMap::from([(machine_time, 1)]));
   }
-  let mut is_contained = FenwickTree::new(rights.len());
-  let mut res_is_contained = vec![0; n];
-  for i in 0..n {
-    let &(_, comp_r, range_idx) = &ranges[i];
-    res_is_contained[range_idx] = (i as u32) - is_contained.get(comp_r - 1);
-    is_contained.update(comp_r, 1);
+  let mut products = 0;
+  let mut time = 0;
+  loop {
+    let (current_time, current_specs) = machines.pop_first().unwrap();
+    time = current_time;
+    for (current_machine_interval, current_machine_copies) in &current_specs {
+      products += current_machine_copies;
+      if products >= n_products {
+        return io.writeln(time);
+      }
+      let next_time = current_time + current_machine_interval;
+      machines
+        .entry(next_time)
+        .and_modify(|next_specs| {
+          next_specs.insert(*current_machine_interval, *current_machine_copies);
+        })
+        .or_insert(BTreeMap::from([(
+          *current_machine_interval,
+          *current_machine_copies,
+        )]));
+    }
   }
-  for c in res_contains {
-    io.write_sp(c);
-  }
-  io.writeln("");
-  for c in res_is_contained {
-    io.write_sp(c);
-  }
-  io.writeln("");
 }
 
 fn open_input() -> Reader {
