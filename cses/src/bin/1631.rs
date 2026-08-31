@@ -18,15 +18,15 @@ type Reader = Box<dyn Read>;
 
 fn solve(io: &mut Io<Reader, Stdout>) {
   let n: usize = io.next();
-  let mut tasks: Vec<(i64, i64)> = (0..n).map(|_| (io.next(), io.next())).collect();
-  tasks.sort_unstable();
-  let mut time = 0;
-  let mut total_reward = 0;
-  for (duration, deadline) in &tasks {
-    time += duration;
-    total_reward += (deadline - time);
+  let mut books: Vec<u64> = (0..n).map(|_| io.next()).collect();
+  books.sort_unstable();
+  let sum = books.iter().sum::<u64>();
+  let last = *books.last().unwrap();
+  if last > sum - last {
+    io.writeln(last * 2);
+  } else {
+    io.writeln(sum);
   }
-  io.writeln(total_reward);
 }
 
 fn open_input() -> Reader {
@@ -86,8 +86,7 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self
-      .input
+    self.input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))

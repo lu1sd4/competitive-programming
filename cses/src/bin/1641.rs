@@ -18,15 +18,36 @@ type Reader = Box<dyn Read>;
 
 fn solve(io: &mut Io<Reader, Stdout>) {
   let n: usize = io.next();
-  let mut tasks: Vec<(i64, i64)> = (0..n).map(|_| (io.next(), io.next())).collect();
-  tasks.sort_unstable();
-  let mut time = 0;
-  let mut total_reward = 0;
-  for (duration, deadline) in &tasks {
-    time += duration;
-    total_reward += (deadline - time);
+  if n < 3 {
+    return io.writeln("IMPOSSIBLE");
   }
-  io.writeln(total_reward);
+  let target: u64 = io.next();
+  let mut numbers: Vec<(u64, usize)> = (0..n).map(|i| (io.next(), i + 1)).collect();
+  numbers.sort_unstable_by_key(|e| e.0);
+  for (sorted_index, (a, a_index)) in numbers[0..numbers.len() - 2].iter().enumerate() {
+    if a > &target {
+      continue;
+    }
+    let two_target = target - a;
+    let mut left = sorted_index + 1;
+    let mut right = numbers.len() - 1;
+    while left < right {
+      if numbers[left].0 > two_target {
+        left += 1;
+        continue;
+      }
+      let looking_for = two_target - numbers[left].0;
+      let n_right = numbers[right].0;
+      if n_right > looking_for {
+        right -= 1;
+      } else if n_right < looking_for {
+        left += 1;
+      } else {
+        return io.writeln(format!("{} {} {}", a_index, numbers[left].1, numbers[right].1));
+      }
+    }
+  }
+  io.writeln("IMPOSSIBLE");
 }
 
 fn open_input() -> Reader {
@@ -86,8 +107,7 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self
-      .input
+    self.input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))
