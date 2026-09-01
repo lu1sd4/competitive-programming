@@ -10,23 +10,81 @@ fn main() {
   let writer = io::stdout();
   let mut io = Io::new(reader, writer);
 
-  solve(&mut io);
+  solve_fast(&mut io);
   io.flush();
 }
 
 type Reader = Box<dyn Read>;
 
-fn solve(io: &mut Io<Reader, Stdout>) {
+fn solve_fast(io: &mut Io<Reader, Stdout>) {
   let n: usize = io.next();
-  let mut books: Vec<u64> = (0..n).map(|_| io.next()).collect();
-  books.sort_unstable();
-  let sum = books.iter().sum::<u64>();
-  let last = *books.last().unwrap();
-  if last > sum - last {
-    io.writeln(last * 2);
-  } else {
-    io.writeln(sum);
+  if n < 4 {
+    return io.writeln("IMPOSSIBLE");
   }
+  let target: u64 = io.next();
+  let mut v: Vec<u64> = (0..n).map(|_| io.next()).collect();
+  let mut sums: HashMap<u64, (usize, usize)> = HashMap::new();
+  for i in 0..n - 1 {
+    for j in i + 1..n {
+      let sum = v[i] + v[j];
+      if sum > target {
+        continue;
+      }
+      let rest = target - sum;
+      if let Some(&(k, l)) = sums.get(&rest) {
+        return io.writeln(format!("{} {} {} {}", i + 1, j + 1, k + 1, l + 1));
+      }
+    }
+    for j in 0..i {
+      sums.insert(&v[i] + v[j], (i, j));
+    }
+  }
+  io.writeln("IMPOSSIBLE")
+}
+
+fn solve_slow(io: &mut Io<Reader, Stdout>) {
+  let n: usize = io.next();
+  if n < 4 {
+    return io.writeln("IMPOSSIBLE");
+  }
+  let target: u64 = io.next();
+  let mut v: Vec<(u64, usize)> = (0..n)
+    .enumerate()
+    .map(|(i, _)| (io.next(), i + 1))
+    .collect();
+  v.sort_unstable();
+  for i in (0..n - 3) {
+    let (a, a_i) = v[i];
+    if a > target {
+      continue;
+    }
+    let t_a = target - a;
+    for j in (i + 1..n - 2) {
+      let (b, b_i) = v[j];
+      if b > t_a {
+        continue;
+      }
+      let t_b = t_a - b;
+      let mut left = j + 1;
+      let mut right = n - 1;
+      while left < right {
+        if v[left].0 > t_b {
+          left += 1;
+          continue;
+        }
+        let looking_for = t_b - v[left].0;
+        let n_right = v[right].0;
+        if n_right > looking_for {
+          right -= 1;
+        } else if n_right < looking_for {
+          left += 1;
+        } else {
+          return io.writeln(format!("{} {} {} {}", a_i, b_i, v[left].1, v[right].1));
+        }
+      }
+    }
+  }
+  io.writeln("IMPOSSIBLE")
 }
 
 fn open_input() -> Reader {

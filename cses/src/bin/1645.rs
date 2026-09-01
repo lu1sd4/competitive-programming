@@ -1,9 +1,11 @@
 #![allow(unused)]
 use std::cmp::{max, min, Reverse};
+use std::collections::btree_map::Range;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Stdout, Write};
 use std::str::FromStr;
+use std::ops::Bound::{Excluded, Unbounded};
 
 fn main() {
   let reader = open_input();
@@ -18,15 +20,21 @@ type Reader = Box<dyn Read>;
 
 fn solve(io: &mut Io<Reader, Stdout>) {
   let n: usize = io.next();
-  let mut books: Vec<u64> = (0..n).map(|_| io.next()).collect();
-  books.sort_unstable();
-  let sum = books.iter().sum::<u64>();
-  let last = *books.last().unwrap();
-  if last > sum - last {
-    io.writeln(last * 2);
-  } else {
-    io.writeln(sum);
+  let mut min_before: Vec<(u32, usize)> = Vec::new();
+  min_before.push((u32::MIN, 0));
+  for current_index in 1..=n {
+    let current_number: u32 = io.next();
+    loop {
+      let &(left_number, left_index) = min_before.last().unwrap();
+      if left_number < current_number {
+        io.write_sp(left_index);
+        min_before.push((current_number, current_index));
+        break;
+      }
+      min_before.pop();
+    }
   }
+  io.writeln("");
 }
 
 fn open_input() -> Reader {
@@ -86,8 +94,7 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self
-      .input
+    self.input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))

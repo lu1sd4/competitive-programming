@@ -43,7 +43,10 @@ fn solve(io: &mut Io<Reader, Stdout>) {
       } else if n_right < looking_for {
         left += 1;
       } else {
-        return io.writeln(format!("{} {} {}", a_index, numbers[left].1, numbers[right].1));
+        return io.writeln(format!(
+          "{} {} {}",
+          a_index, numbers[left].1, numbers[right].1
+        ));
       }
     }
   }
@@ -107,7 +110,8 @@ impl<R: Read, W: Write> Io<R, W> {
   }
 
   fn next_char(&mut self) -> Option<char> {
-    self.input
+    self
+      .input
       .by_ref()
       .bytes()
       .map(|b| b.expect("failed to read a byte from input"))
